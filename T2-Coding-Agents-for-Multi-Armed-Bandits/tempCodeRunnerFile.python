@@ -1,0 +1,11 @@
+import numpy as np
+
+class MultiArmedBandit:
+    def __init__(self, arms: np.ndarray[float]):
+        self.arms = arms  # List of probabilities of each arm returning a favorable reward
+        self.best_arm = np.max(arms)  # Useful for regret calculation
+        self.cumulative_regret_array = [0]
+
+# Example usage:
+arms_probabilities = np.array([0.2, 0.5, 0.8])
+bandit = MultiArmedBandit(arms_probabilities)
