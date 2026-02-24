@@ -8,3 +8,4 @@ torchvision
 torchaudio
 stable-baselines3[extra]
 shimmy>=2.0
+wandb

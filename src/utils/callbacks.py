@@ -22,3 +22,4 @@ class TrainAndLoggingCallback(BaseCallback):
             if self.verbose:
                 print(f"Saved model to {model_path}")
         return True
+

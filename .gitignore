@@ -1,0 +1,22 @@
+# Environment and Editor
+__pycache__/
+*.py[cod]
+*$py.class
+.vscode/
+
+# Virtual Environments
+venv/
+env/
+.env/
+
+# Training Logs and Outputs
+logs/
+train/
+models/
+
+# WandB (Weights & Biases) Local Data
+wandb/
+
+# OS Generated Files
+.DS_Store
+Thumbs.db

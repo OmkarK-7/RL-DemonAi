@@ -1,7 +1,8 @@
 import argparse
 import os
+import wandb
+from wandb.integration.sb3 import WandbCallback
 from stable_baselines3 import PPO
-
 from src.envs.vizdoom_env import VizDoomBasic, VizDoomDefendCenter, VizDoomCorridor
 from src.utils.callbacks import TrainAndLoggingCallback
 
@@ -30,6 +31,8 @@ def main():
     elif args.scenario == 'corridor':
         env = VizDoomCorridor()
         n_steps = 8192
+        # Corridor uses a smaller specialized learning rate
+        args.learning_rate = 0.00001
     else:
         raise ValueError("Invalid scenario selected")
     
@@ -41,21 +44,52 @@ def main():
     
     callback = TrainAndLoggingCallback(check_freq=10000, save_path=CHECKPOINT_DIR)
     
-    # Initialize agent
-    model = PPO('CnnPolicy', env, tensorboard_log=LOG_DIR, verbose=1, 
-                learning_rate=args.learning_rate, n_steps=n_steps)
+    # Initialize WandB run
+    run = wandb.init(
+        project="RL-DemonAi",
+        config={
+            "scenario": args.scenario,
+            "timesteps": args.timesteps,
+            "learning_rate": args.learning_rate,
+            "n_steps": n_steps,
+        },
+        sync_tensorboard=True,  # Auto-upload sb3's tensorboard metrics
+        monitor_gym=True,       # Auto-upload the videos of agents playing the game
+        save_code=True,         # Auto-save the main python script
+    )
+    
+    # WandbCallback automatically logs all metrics
+    wandb_callback = WandbCallback(
+        gradient_save_freq=1000,
+        model_save_path=f"models/{run.id}",
+        verbose=2,
+    )
+    
+    # Setup PPO hyperparameters
+    ppo_kwargs = {
+        'policy': 'CnnPolicy',
+        'env': env,
+        'tensorboard_log': LOG_DIR,
+        'verbose': 1,
+        'learning_rate': args.learning_rate,
+        'n_steps': n_steps,
+    }
     
     # In corridor scenario we need some custom hyperparameters from notebook
     if args.scenario == 'corridor':
-        model.clip_range = 0.1
-        model.gamma = 0.95
-        model.gae_lambda = 0.9
-        model.learning_rate = 0.00001
+        ppo_kwargs['clip_range'] = 0.1
+        ppo_kwargs['gamma'] = 0.95
+        ppo_kwargs['gae_lambda'] = 0.9
+        
+    # Initialize agent
+    model = PPO(**ppo_kwargs)
         
     print(f"Starting training for {args.scenario} scenario for {args.timesteps} timesteps...")
-    model.learn(total_timesteps=args.timesteps, callback=callback)
+    # List of callbacks format
+    model.learn(total_timesteps=args.timesteps, callback=[callback, wandb_callback])
     print("Training finished!")
     env.close()
+    run.finish()
 
 if __name__ == '__main__':
     main()
