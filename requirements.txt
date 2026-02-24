@@ -1,0 +1,10 @@
+vizdoom
+gym==0.26.2
+opencv-python
+matplotlib
+numpy
+torch
+torchvision
+torchaudio
+stable-baselines3[extra]
+shimmy>=2.0
